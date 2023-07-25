@@ -8,7 +8,7 @@ use std::collections::HashMap;
     + `insert(x)` inserts `x` into the datastructure. ($O(1)$ time per operation)
     + `getfa(x)` returns the father of `x`. Here father means the representative of the set containing `x`. (amortized $O(1)$ time per operation)
     + `is_union(x,y)` returns whether `x` and `y` are in the same set. (amortized $O(1)$ time per operation)
-    + `unite(x,y)` unions the set containing `x` and the set containing `y`. (amortized $O(1)$ time per operation)
+    + `unite(x,y)` unites the set containing `x` and the set containing `y`. (amortized $O(1)$ time per operation)
 */
 pub struct UnionSet<T: Clone + std::fmt::Debug + std::hash::Hash + std::cmp::Eq> {
     fa: HashMap<T, T>,  
@@ -16,13 +16,14 @@ pub struct UnionSet<T: Clone + std::fmt::Debug + std::hash::Hash + std::cmp::Eq>
 
 impl<T: Clone + std::fmt::Debug + std::hash::Hash + std::cmp::Eq> UnionSet<T> {
 
-    /** New an empty  `UnionSet`*/
+    /** New an empty `UnionSet`*/
     pub fn new()-> Self {
         UnionSet {
             fa: HashMap::new(),
         }
     }
 
+    /** New a `UnionSet` with elements from vector `x` where each element will be initialized as an individual set. */
     pub fn new_from_vec(x: &Vec<T>) -> Self {
         UnionSet {
             fa: x.iter().map(|x| (x.clone(), x.clone())).collect(),
@@ -34,7 +35,7 @@ impl<T: Clone + std::fmt::Debug + std::hash::Hash + std::cmp::Eq> UnionSet<T> {
         self.fa.contains_key(x)
     }
 
-    /** `insert(x)` inserts `x` into the datastructure. ($O(1)$ time per operation)*/
+    /** `insert(x)` inserts `x` into the datastructure as an individual set. ($O(1)$ time per operation)*/
     pub fn insert(&mut self, x: &T) -> Result<(), ()> {
         if self.fa.contains_key(x) {
             return Err(());
@@ -69,7 +70,7 @@ impl<T: Clone + std::fmt::Debug + std::hash::Hash + std::cmp::Eq> UnionSet<T> {
         Ok(self._getfa(x) == self._getfa(y))
     }
 
-    /** `unite(x,y)` unions the set containing `x` and the set containing `y`. (amortized $O(1)$ time per operation)*/
+    /** `unite(x,y)` unites the set containing `x` and the set containing `y`. (amortized $O(1)$ time per operation)*/
     pub fn unite(&mut self, x: &T, y: &T) -> Result<(),()> {
         if !self.fa.contains_key(x) || !self.fa.contains_key(y) {
             return Err(());
