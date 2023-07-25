@@ -3,5 +3,5 @@
 version = 3
 
 [[package]]
-name = "ZHL_algorithm_template-rs"
+name = "zhl_algorithm_template-rs"
 version = "0.1.0"
