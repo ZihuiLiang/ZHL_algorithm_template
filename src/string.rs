@@ -29,8 +29,6 @@ impl<T: Clone + std::fmt::Debug + std::cmp::PartialEq> EXKMP<T> {
                     j += 1;
                 }
                 z[i] = j;
-            }
-            if i + z[i] - 1 > r {
                 l = i;
                 r = i + z[i] - 1;
             }
@@ -70,8 +68,6 @@ impl<T: Clone + std::fmt::Debug + std::cmp::PartialEq> EXKMP<T> {
                     j += 1;
                 }
                 ans[i] = j;
-            }
-            if i + ans[i] - 1 > r {
                 l = i;
                 r = i + ans[i] - 1;
             }
