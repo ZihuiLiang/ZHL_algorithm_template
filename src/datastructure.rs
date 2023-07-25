@@ -89,12 +89,14 @@ pub struct CompactUnionSet {
 
 impl CompactUnionSet {
     
+    /** New a `CompactUnionSet` of `n` elements where each element will be initialized as an individual set. */
     pub fn new(n: usize) -> Self {
         CompactUnionSet {
             fa: (0..n).collect(),
         }
     }
 
+    /** `enlarge_to` enlarges the `CompactUnionSet` so that it contains at least `n` element. Each new elements will be initialized as an individual set. ($O(1)$ time per insertion of new node) */
     pub fn enlarge_to(&mut self, n: usize) {
         if n <= self.fa.len() {
             return;
@@ -114,6 +116,7 @@ impl CompactUnionSet {
         return fa;
     }
 
+    /** `getfa(x)` returns the father of `x`. Here father means the representative of the set containing `x`. (amortized $O(1)$ time per operation)*/
     pub fn getfa(&mut self, x: usize) -> Result<usize, ()> {
         if x >= self.fa.len() {
             return Err(());
@@ -121,7 +124,7 @@ impl CompactUnionSet {
         Ok(self._getfa(x))
     }
 
-
+    /** `is_union(x,y)` returns whether `x` and `y` are in the same set. (amortized $O(1)$ time per operation)*/
     pub fn is_union(&mut self, x: usize, y: usize) -> Result<bool, ()> {
         if x >= self.fa.len() || y >= self.fa.len() {
             return Err(());
@@ -129,6 +132,7 @@ impl CompactUnionSet {
         Ok(self.getfa(x) == self.getfa(y))
     }
 
+    /** `unite(x,y)` unites the set containing `x` and the set containing `y`. (amortized $O(1)$ time per operation)*/
     pub fn unite(&mut self, x: usize, y: usize) -> Result<(), ()> {
         if x >= self.fa.len() || y >= self.fa.len() {
             return Err(());
