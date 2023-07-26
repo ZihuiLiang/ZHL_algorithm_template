@@ -1,11 +1,12 @@
 /*! This crate demonstrates the algorithms for solving math problems.
 */
 
+use std::cmp;
 
 /** `ZeroOneLinearEquation` is a linear equation in $\mathbf{Z}^{n}_2$. */
 #[derive(Clone, Debug)]
 pub struct ZeroOneLinearEquation {
-    f: Vec<i128>,
+    f: Vec<u128>,
     equation_size: usize,
 }
 
@@ -14,7 +15,7 @@ impl ZeroOneLinearEquation {
     /** New a `ZeroOneLinearEquation` with `size` of dimensions. */
     pub fn new(size: usize) -> Self {
         ZeroOneLinearEquation {
-            f: vec![0i128; (size + 127) / 128],
+            f: vec![0u128; (size + 127) / 128],
             equation_size: size,
         }
     }
@@ -87,6 +88,33 @@ impl ZeroOneLinearEquation {
     }
 }
 
+/** Implement `PartialEq` for `ZeroOneLinearEquation`*/
+impl PartialEq for ZeroOneLinearEquation {
+    fn eq(&self, other: &Self) -> bool {
+        assert!(self.equation_size == other.equation_size);
+        for i in 0..self.f.len() {
+            if self.f[i] != other.f[i] {
+                return false;
+            }
+        }
+        true
+    }
+}
+
+/** Implement `PartialOrd` for `ZeroOneLinearEquation`. a<b if the highest different bit in b is 1. */
+impl PartialOrd for ZeroOneLinearEquation {
+    fn partial_cmp(&self, other: &Self) -> Option<cmp::Ordering> {
+        assert!(self.equation_size == other.equation_size);
+        for i in (0..self.f.len()).rev() {
+            if self.f[i] > other.f[i] {
+                return Some(cmp::Ordering::Greater);
+            } else if self.f[i] < other.f[i] {
+                return Some(cmp::Ordering::Less);
+            }
+        }
+        Some(cmp::Ordering::Equal)
+    }
+}
 
 /** `XorLinearEquationSystem` is a system of linear equations, ($\mathbf{Z}^{n}_2$, `Xor`). */
 #[derive(Clone, Debug)]
@@ -192,17 +220,19 @@ impl XorLinearEquationSystem {
 
             let tmp = self.equations[l].clone();
             
-            for k in 0..i {
+            for k in 0..l {
                 if self.equations[k].get_i(i) {
                     self.equations[k].xor(& tmp);
                 }
             }
 
-            for k in i+1..self.equations.len() {
+            for k in l+1..self.equations.len() {
                 if self.equations[k].get_i(i) {
                     self.equations[k].xor(& tmp);
                 }
             }
+
+
             l += 1;
         }
         self.equations.truncate(l);
