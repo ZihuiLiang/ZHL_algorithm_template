@@ -1,8 +1,7 @@
 /** Problem link: https://www.luogu.com.cn/problem/P5410 */
-
 use std::io::stdin;
-
 use zhl_algorithm_template_rs::string::EXKMP;
+
 fn main() {
     let mut a = String::new();
     let mut b = String::new();
