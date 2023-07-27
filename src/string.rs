@@ -2,6 +2,76 @@
 */
 
 
+/** `KMP` is an algorithm to compute the prefix-function for a model string `s` in $O(|s|)$ time. $pref_func[i]$ is the length of the longest border (the border should shorter than $s[0..=i]$) of $s[0..]$ and $s[..=i]$. Also, given another string `t`, for $i\in [0,|t|)$ KMP can be applied to compute the longest border (the border can be `s[0..=i]` and `t[0..=i]`) of $s[0..]$ and $t[..=i]$ in $O(|t|)$ time (see `extend` function). */
+#[derive(Clone, Debug)]
+pub struct KMP<T: Clone + std::fmt::Debug + std::cmp::PartialEq> {
+    pref_func: Vec<usize>,
+    s: Vec<T>,
+}
+
+impl<T: Clone + std::fmt::Debug + std::cmp::PartialEq> KMP<T> {
+
+    /** Return `KMP` with computed prefix-function in $O(|s|)$ time. */
+    pub fn new(s: &Vec<T>) -> Self {
+        if s.len() == 0 {
+            return KMP { pref_func: vec![], s: vec![] };
+        }
+        let mut pref_func = vec![0; s.len()];
+        for i in 1..s.len() {
+            let mut j = pref_func[i - 1];
+            while j > 0 && s[j] != s[i] {
+                j = pref_func[j - 1];
+            }
+            if s[j] == s[i] {
+                j += 1;
+            }
+            pref_func[i] = j;
+        }
+        KMP { pref_func, s: s.clone() }
+    }
+
+    /** Return prefix-function. */
+    pub fn get_pref_func(&self) -> &Vec<usize> {
+        &self.pref_func
+    }
+
+    /** Return the model string. */
+    pub fn get_s(&self) -> &Vec<T> {
+        &self.s
+    }
+
+    /** Compute the prefix-function of `t` in `s`. */
+    pub fn extend(&self, t: &Vec<T>) -> Vec<usize> {
+        if t.len() == 0 {
+            return vec![];
+        }
+        let mut ans = vec![0;t.len()];
+        let mut j = 0;
+        for i in 0..t.len() {
+            if j == self.s.len() {
+                j = self.pref_func[j - 1];
+            }
+            while j > 0 && self.s[j] != t[i] {
+                j = self.pref_func[j - 1];
+            }
+            if self.s[j] == t[i] {
+                j += 1;
+            }
+            ans[i] = j;
+        }
+        ans
+    }
+
+    /** Return the all occurrences of `s` in `t` (`prefix_func[i]=t.len()`). */
+    pub fn find_occurences(&self, t: &Vec<T>) -> Vec<usize> {
+        if t.len() < self.s.len() || t.len() == 0 {
+            return vec![];
+        }
+        self.extend(t).iter().enumerate().filter(|(_, &x)| x == self.s.len()).map(|(i, _)| i - self.s.len() + 1).collect()
+    }
+}
+
+
 /** `EXKMP` is an algorithm to compute the z-function for a model string `s` in $O(|s|)$ time. $z[i]$ is the length of the longest common prefix of $s[0..]$ and $s[i..]$. Also, given another string `t`, for $i\in [0,|t|)$ EXKMP can be applied to compute the longest common prefix of $s[0..]$ and $t[i..]$ in $O(|t|)$ time (see `extend` function). */
 #[derive(Clone, Debug)]
 pub struct EXKMP<T: Clone + std::fmt::Debug + std::cmp::PartialEq> {
