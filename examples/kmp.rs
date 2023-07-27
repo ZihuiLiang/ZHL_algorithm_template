@@ -1,5 +1,7 @@
+/** Problem link: https://www.luogu.com.cn/problem/P3375 */
 use std::io::stdin;
 use zhl_algorithm_template_rs::string::KMP;
+
 fn main() {
     let mut s = String::new();
     stdin().read_line(&mut s).unwrap();
