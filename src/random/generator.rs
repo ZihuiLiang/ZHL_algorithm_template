@@ -1,5 +1,3 @@
-/*! This crate demonstrates the random algorithms and datastructures.
-*/
 use std::{collections::HashSet, ops::Range, time::SystemTime};
 
 

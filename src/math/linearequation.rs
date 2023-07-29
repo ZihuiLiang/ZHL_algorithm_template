@@ -1,6 +1,3 @@
-/*! This crate demonstrates the algorithms for solving math problems.
-*/
-
 use std::cmp;
 
 /** `ZeroOneLinearEquation` is a linear equation in $\mathbf{Z}^{n}_2$. */

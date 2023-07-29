@@ -1,6 +1,3 @@
-/*! This crate demonstrates the datastructures
-*/
-
 use std::collections::HashMap;
 
 /** `UnionSet` is a datastructure for maintaining the set relation between elements. It supports the operations as follows:

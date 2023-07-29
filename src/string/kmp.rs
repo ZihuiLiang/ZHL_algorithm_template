@@ -1,7 +1,3 @@
-/*! This crate demonstrates the algorithms for solving string problems.
-*/
-
-
 /** `KMP` is an algorithm to compute the prefix-function for a model string `s` in $O(|s|)$ time. `pref_func[i]` is the length of the longest border (the border should be shorter than $s[0..=i]$) of $s[0..]$ and $s[..=i]$. Also, given another string `t`, for $i\in [0,|t|)$ `KMP` can be applied to compute the longest border (the border can be $s[0..=i]$ and $t[0..=i]$) of $s[0..]$ and $t[..=i]$ in $O(|t|)$ time (see `extend` function). */
 #[derive(Clone, Debug)]
 pub struct KMP<T: Clone + std::fmt::Debug + std::cmp::PartialEq> {
