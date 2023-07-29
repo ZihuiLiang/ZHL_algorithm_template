@@ -1,6 +1,7 @@
 use zhl_algorithm_template_rs::random::{IntGenerator, MT19937_64, Pseudorandom64};
 fn main() {
     let mut gen = IntGenerator::new(&MT19937_64::new(None));
+
     println!("Gen a u8: {}", gen.gen::<u8>());
     println!("Gen a u16: {}", gen.gen::<u16>());
     println!("Gen a u32: {}", gen.gen::<u32>());

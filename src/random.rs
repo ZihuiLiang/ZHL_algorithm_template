@@ -18,6 +18,12 @@ pub trait Pseudorandom64: Clone {
 /** `IntGenerator` is a generator used for generating integers. */
 pub struct IntGenerator<RNG: Pseudorandom64>{
     rng: RNG,
+    v_1: u64,
+    cnt_1: u8,
+    v_2: u64,
+    cnt_2: u8,
+    v_4: u64,
+    cnt_4: u8,
 }
 
 
@@ -26,29 +32,51 @@ impl<RNG: Pseudorandom64> IntGenerator<RNG> {
     /** New a `NumGenerator` with a given pseudorandom number generator `rng`. */
     pub fn new(rng: &RNG) -> IntGenerator<RNG> {
         IntGenerator {
-            rng: rng.clone()
+            rng: rng.clone(),
+            v_1: 0u64,
+            cnt_1: 8,
+            v_2: 0u64,
+            cnt_2: 8,
+            v_4: 0u64,
+            cnt_4: 8,
         }
     }
 
     /** Generate a `T`-type integer. */
     pub fn gen<T: TryFrom<u64> + std::ops::BitOr<Output = T> + std::ops::Shl<i32, Output = T> + Copy>(&mut self) -> T where <T as TryFrom<u64>>::Error: std::fmt::Debug {
+
         match std::mem::size_of::<T>() {
             1 => {
-                let v = self.rng.gen();
-                let x: T = (v & 0xf).try_into().unwrap();
-                let y: T = ((v >> 4) & 0xf).try_into().unwrap();
+                if self.cnt_1 == 8 {
+                    self.v_1 = self.rng.gen();
+                    self.cnt_1 = 0;
+                }
+                let x: T = (self.v_1 & 0xf).try_into().unwrap();
+                let y: T = ((self.v_1 >> 4) & 0xf).try_into().unwrap();
+                self.cnt_1 += 1;
+                self.v_1 >>= 8;
                 x << 4 | y
             }, 
             2 => {
-                let v = self.rng.gen();
-                let x: T = (v & 0xff).try_into().unwrap();
-                let y: T = ((v >> 8) & 0xff).try_into().unwrap();
+                if self.cnt_2 == 8 {
+                    self.v_2 = self.rng.gen();
+                    self.cnt_2 = 0;
+                }
+                let x: T = (self.v_2 & 0xff).try_into().unwrap();
+                let y: T = ((self.v_2 >> 8) & 0xff).try_into().unwrap();
+                self.cnt_2 += 2;
+                self.v_2 >>= 16;
                 x << 8 | y
             },
             4 => {
-                let v = self.rng.gen();
-                let x: T = (v & 0xffff).try_into().unwrap();
-                let y: T = ((v >> 16) & 0xffff).try_into().unwrap();
+                if self.cnt_4 == 8 {
+                    self.v_4 = self.rng.gen();
+                    self.cnt_4 = 0;
+                }
+                let x: T = (self.v_4 & 0xffff).try_into().unwrap();
+                let y: T = ((self.v_4 >> 16) & 0xffff).try_into().unwrap();
+                self.cnt_4 += 4;
+                self.v_4 >>= 32;
                 x << 16 | y
             },
             8 => {
