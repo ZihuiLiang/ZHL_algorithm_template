@@ -14,7 +14,7 @@ pub fn pow_mod<T: TryFrom<u64> + std::ops::ShrAssign<usize>>(mut a: T, mut b: T,
     ans
 }
 
-/** `gcd` is an algorithm to compute the greatest common divisor of two integers $a$ and $b$ in $O(\log^3(a+b))$. */
+/** `gcd` is an algorithm to compute the greatest common divisor of two integers $a$ and $b$ in $O(\log^3(a+b))$ where $O(\log^2 (a+b))$ is the complexity of big integer operations. */
 pub fn gcd<T: TryFrom<u64>>(mut a: T, mut b: T) -> T where T: std::ops::Rem<Output = T> + std::cmp::PartialEq + std::cmp::PartialOrd + Copy, <T as TryFrom<u64>>::Error: std::fmt::Debug {
     let zero: T = 0.try_into().unwrap();
     while b > zero {

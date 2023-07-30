@@ -1,19 +1,23 @@
+/** Problem link: https://www.luogu.com.cn/problem/P4718 */
 use std::io::stdin;
 fn main() {
     let mut rng = MT19937_64::new(None);
-    let mut miller_rabin = MillerRabin::new(&mut rng, None);
+    let mut MillerRabin = MillerRabin::new(&mut rng, Some(8));
+    let mut rng = MT19937_64::new(None);
+    let mut pollard_rho = PollardRho::new(&mut rng, &MillerRabin);
     let mut input = String::new();
-    while let Ok(x) = stdin().read_line(&mut input) {
-        if x == 0 {
-            break;
-        }
-        let n: u128 = input.trim().parse().unwrap();
-        if miller_rabin.is_prime(&n) {
-            println!("Y");
-        } else {
-            println!("N");
-        }
+    stdin().read_line(&mut input).unwrap();
+    let t: usize = input.trim().parse().unwrap();
+    for _ in 0..t {
         input.clear();
+        stdin().read_line(&mut input).unwrap();
+        let n: u128 = input.trim().parse().unwrap();
+        let primes = pollard_rho.extract_prime_factors(&n);
+        if primes.len() == 1 {
+            println!("Prime");
+        } else {
+            println!("{}", primes.iter().max().unwrap());
+        }
     }
 }
 
@@ -308,23 +312,24 @@ impl Pseudorandom64 for MT19937_64 {
     }
 }
 
+
 /** `PrimalityTest` introduces a trait for primality test. */
 pub trait PrimalityTest: Clone {
-    /** Test if $n$ is a prime. Note that `T` should be able to contain $n^2$. */
+    /** Test if `n` is a prime. Note that `T` should be able to contain $n^2$. */
     fn is_prime<T>(&mut self, n: &T) -> bool where T: TryFrom<u64> + std::ops::BitOr<Output = T> + std::ops::ShrAssign<usize> + std::ops::Shl<usize, Output = T> + std::ops::Sub<Output = T> + std::ops::AddAssign + std::ops::Mul<Output = T> + std::ops::Rem<Output = T> + std::ops::Div<Output = T>  + std::ops::Add<Output = T> + Copy + std::cmp::PartialEq + std::cmp::PartialOrd + std::ops::BitAnd<Output = T> + std::fmt::Debug, <T as TryFrom<u64>>::Error: std::fmt::Debug;
 }
 
 /** `FindPrimeFactors` introduces a trait for Extracting prime factors from an integer.*/
 pub trait ExtractPrimeFactors: Clone {
-    /** Extract prime factors from an integer. Note that `T` should be able to contain $n^2$. */
+    /** Extract all prime factors from an integer. Note that `T` should be able to contain $n^2$. */
     fn extract_prime_factors<T>(&mut self, n: &T) -> Vec<T> where T: TryFrom<u64> + std::ops::BitOr<Output = T> + std::ops::ShrAssign<usize> + std::ops::Shl<usize, Output = T> + std::ops::Sub<Output = T> + std::ops::AddAssign + std::ops::Mul<Output = T> + std::ops::Rem<Output = T> + std::ops::Div<Output = T> + std::ops::DivAssign + std::ops::Add<Output = T> + Copy + std::cmp::PartialEq + std::cmp::PartialOrd + std::ops::BitAnd<Output = T> + std::fmt::Debug, <T as TryFrom<u64>>::Error: std::fmt::Debug;
 
-    /** Extract a (not necessarily prime) factor from an integer. Note that `T` should be able to contain $n^2$. */
+    /** Extract a (not necessarily prime) factor (which is strictly smaller than `n`) from `n`. Note that `T` should be able to contain $n^2$. */
     fn extract_factor<T>(&mut self, n: &T) -> Option<T> where T: TryFrom<u64> + std::ops::BitOr<Output = T> + std::ops::ShrAssign<usize> + std::ops::Shl<usize, Output = T> + std::ops::Sub<Output = T> + std::ops::AddAssign + std::ops::Mul<Output = T> + std::ops::Rem<Output = T>  + std::ops::Div<Output = T> + std::ops::Add<Output = T> + Copy + std::cmp::PartialEq + std::cmp::PartialOrd + std::ops::BitAnd<Output = T> + std::fmt::Debug, <T as TryFrom<u64>>::Error: std::fmt::Debug;
 
 }
 
-/** `BruteForcePrimalityTest` is a naive algorithm of primality test. It's computation complexity is $O(\sqrt{n})$. */
+/** `BruteForcePrimalityTest` is a naive algorithm of primality test. Its computation complexity is $O(\sqrt{n})$. */
 #[derive(Clone, Debug)]
 pub struct BruteForcePrimalityTest {}
 
@@ -336,7 +341,7 @@ impl BruteForcePrimalityTest {
 }
 
 impl PrimalityTest for BruteForcePrimalityTest {
-    /** Test if $n$ is a prime in $O(\sqrt{n})$ time. */
+    /** Test if `n` is a prime in $O(\sqrt{n})$ time. */
     fn is_prime<T>(&mut self, n: &T) -> bool where T: TryFrom<u64> + std::ops::BitOr<Output = T> + std::ops::ShrAssign<usize> + std::ops::Shl<usize, Output = T> + std::ops::Sub<Output = T> + std::ops::AddAssign + std::ops::Mul<Output = T> + std::ops::Rem<Output = T> + std::ops::Div<Output = T>  + std::ops::Add<Output = T> + Copy + std::cmp::PartialEq + std::cmp::PartialOrd + std::ops::BitAnd<Output = T> + std::fmt::Debug, <T as TryFrom<u64>>::Error: std::fmt::Debug {
         let zero: T = 0.try_into().unwrap();
         let one: T = 1.try_into().unwrap();
@@ -349,10 +354,12 @@ impl PrimalityTest for BruteForcePrimalityTest {
         }
         assert_eq!(*n * *n / *n, *n); // check T can contain *n * *n
         let mut i = two;
-        while i * i <= *n {
+        let mut i2: T = 4.try_into().unwrap(); 
+        while i2 <= *n {
             if *n % i == zero {
                 return false;
             }
+            i2 += one + (i << 1);
             i += one;
         }
         true
@@ -360,7 +367,7 @@ impl PrimalityTest for BruteForcePrimalityTest {
 }
 
 impl ExtractPrimeFactors for BruteForcePrimalityTest {
-    /** Extract prime factors from an integer. */
+    /** Extract all prime factors from an integer. */
     fn extract_prime_factors<T>(&mut self, n: &T) -> Vec<T> where T: TryFrom<u64> + std::ops::BitOr<Output = T> + std::ops::ShrAssign<usize> + std::ops::Shl<usize, Output = T> + std::ops::Sub<Output = T> + std::ops::AddAssign + std::ops::Mul<Output = T> + std::ops::Rem<Output = T> + std::ops::Div<Output = T> + std::ops::DivAssign + std::ops::Add<Output = T> + Copy + std::cmp::PartialEq + std::cmp::PartialOrd + std::ops::BitAnd<Output = T> + std::fmt::Debug, <T as TryFrom<u64>>::Error: std::fmt::Debug {
         let mut ans = Vec::new();
         let mut n = *n;
@@ -372,13 +379,14 @@ impl ExtractPrimeFactors for BruteForcePrimalityTest {
             n >>= 1;
         }
         let mut i = two;
-        while i * i <= n {
-            if n % i == zero {
+        let mut i2: T = 4.try_into().unwrap();
+        while i2 <= n {
+            while n % i == zero {
                 ans.push(i);
                 n /= i;
-            } else {
-                i += one;
-            }
+            } 
+            i2 += one + (i << 1);
+            i += one;
         }
         if n != one {
             ans.push(n);
@@ -396,10 +404,12 @@ impl ExtractPrimeFactors for BruteForcePrimalityTest {
             return Some(two);
         }
         let mut i = two;
-        while i * i <= n {
+        let mut i2: T = 4.try_into().unwrap();
+        while i2 <= n {
             if n % i == zero {
                 return Some(i);
             } else {
+                i2 += one + (i << 1);
                 i += one;
             }
         }
@@ -407,7 +417,7 @@ impl ExtractPrimeFactors for BruteForcePrimalityTest {
     }
 }
 
-/** `MillerRabin` is an efficient algorithm of primality test. It's computation complexity is $O(k\log^2 n)$ where $k$ is the number of rounds performed and $n$ is the number tested for primality. It's accuracy is $4^{-k}$. */
+/** `MillerRabin` is an efficient algorithm of primality test. Its computation complexity is $O(k\log^2 n)$ where $k$ is the number of rounds performed and $n$ is the number tested for primality. Its accuracy is $4^{-k}$. */
 #[derive(Clone, Debug)]
 pub struct MillerRabin<RNG: Pseudorandom64> {
     rng: IntGenerator<RNG>,
@@ -425,7 +435,7 @@ impl<RNG: Pseudorandom64> MillerRabin<RNG> {
 }
 
 impl<RNG: Pseudorandom64> PrimalityTest for MillerRabin<RNG> {
-    /** Test if $n$ is a prime. */
+    /** Test if `n` is a prime. */
     fn is_prime<T>(&mut self, n: &T) -> bool where T: TryFrom<u64> + std::ops::BitOr<Output = T> + std::ops::ShrAssign<usize> + std::ops::Shl<usize, Output = T> + std::ops::Sub<Output = T> + std::ops::AddAssign + std::ops::Mul<Output = T> + std::ops::Rem<Output = T> + std::ops::Div<Output = T>  + std::ops::Add<Output = T> + Copy + std::cmp::PartialEq + std::cmp::PartialOrd + std::ops::BitAnd<Output = T> + std::fmt::Debug, <T as TryFrom<u64>>::Error: std::fmt::Debug{
         let zero: T = 0.try_into().unwrap();
         let one: T = 1.try_into().unwrap();
@@ -468,23 +478,23 @@ impl<RNG: Pseudorandom64> PrimalityTest for MillerRabin<RNG> {
 /** `PollardRho` is an algorithm for integer factorization. */
 
 #[derive(Clone, Debug)]
-pub struct PollardRho<RNG: Pseudorandom64, PD: PrimalityTest> {
+pub struct PollardRho<RNG: Pseudorandom64, PT: PrimalityTest> {
     rng: IntGenerator<RNG>,
-    prime_detector: PD, 
+    primality_tester: PT, 
 }
 
-impl<RNG: Pseudorandom64, PD: PrimalityTest> PollardRho<RNG, PD> {
-    /** New a `PollardRho` with a given pseudorandom 64-bit number generator `rng`. */
-    pub fn new(rng: &RNG, prime_detector: &PD) -> PollardRho<RNG, PD> {
+impl<RNG: Pseudorandom64, PT: PrimalityTest> PollardRho<RNG, PT> {
+    /** New a `PollardRho` with a given pseudorandom 64-bit number generator `rng` and a given primality tester `primality_tester`. */
+    pub fn new(rng: &RNG, primality_tester: &PT) -> PollardRho<RNG, PT> {
         PollardRho {
             rng: IntGenerator::new(rng),
-            prime_detector: prime_detector.clone(),
+            primality_tester: primality_tester.clone(),
         }
     }
 }
 
-impl<RNG: Pseudorandom64, PD: PrimalityTest> ExtractPrimeFactors for PollardRho<RNG, PD> {
-    /** Extract prime factors from an integer. */
+impl<RNG: Pseudorandom64, PT: PrimalityTest> ExtractPrimeFactors for PollardRho<RNG, PT> {
+    /** Extract all prime factors from an integer. */
     fn extract_prime_factors<T>(&mut self, n: &T) -> Vec<T> where T: TryFrom<u64> + std::ops::BitOr<Output = T> + std::ops::ShrAssign<usize> + std::ops::Shl<usize, Output = T> + std::ops::AddAssign + std::ops::Sub<Output = T> + std::ops::Mul<Output = T> + std::ops::Rem<Output = T> + std::ops::Div<Output = T> + std::ops::DivAssign + std::ops::Add<Output = T> + Copy + std::cmp::PartialEq + std::cmp::PartialOrd + std::ops::BitAnd<Output = T> + std::fmt::Debug, <T as TryFrom<u64>>::Error: std::fmt::Debug {
         let mut ans = Vec::new();
         let mut n = *n;
@@ -524,9 +534,9 @@ impl<RNG: Pseudorandom64, PD: PrimalityTest> ExtractPrimeFactors for PollardRho<
         ans
     }
 
-    /** Extract a prime factor from an integer. $O(n^{0.25})$ */
+    /** Extract a (not necessarily prime) factor (which is strictly smaller than `n`) from `n`. If no such a factor then return `None`. It takes $O(n^{0.25})$ time.  */
     fn extract_factor<T>(&mut self, n: &T) -> Option<T> where T: TryFrom<u64> + std::ops::BitOr<Output = T> + std::ops::ShrAssign<usize> + std::ops::Shl<usize, Output = T> + std::ops::AddAssign + std::ops::Sub<Output = T> + std::ops::Mul<Output = T> + std::ops::Rem<Output = T>  + std::ops::Div<Output = T> + std::ops::Add<Output = T> + Copy + std::cmp::PartialEq + std::cmp::PartialOrd + std::ops::BitAnd<Output = T> + std::fmt::Debug, <T as TryFrom<u64>>::Error: std::fmt::Debug {
-        if self.prime_detector.is_prime(n) {
+        if self.primality_tester.is_prime(n) {
             return None;
         }
         let zero: T = 0.try_into().unwrap();
