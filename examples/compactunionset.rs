@@ -1,6 +1,6 @@
 /** Problem link: https://www.luogu.com.cn/problem/P3367 */
 use std::io::stdin;
-use zhl_algorithm_template_rs::datastructure::CompactUnionSet;
+use zhl_algorithm_template_rs::datastructure::unionset::CompactUnionSet;
 
 fn main() {
     let mut s = String::new();

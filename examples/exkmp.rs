@@ -1,6 +1,6 @@
 /** Problem link: https://www.luogu.com.cn/problem/P5410 */
 use std::io::stdin;
-use zhl_algorithm_template_rs::string::EXKMP;
+use zhl_algorithm_template_rs::string::kmp::EXKMP;
 
 fn main() {
     let mut a = String::new();

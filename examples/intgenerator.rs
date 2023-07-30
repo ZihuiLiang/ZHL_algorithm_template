@@ -1,4 +1,4 @@
-use zhl_algorithm_template_rs::random::{IntGenerator, MT19937_64, Pseudorandom64};
+use zhl_algorithm_template_rs::random::generator::{IntGenerator, MT19937_64, Pseudorandom64};
 fn main() {
     let mut gen = IntGenerator::new(&MT19937_64::new(None));
 

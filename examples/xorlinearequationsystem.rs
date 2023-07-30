@@ -1,6 +1,6 @@
 /** Problem link: https://www.luogu.com.cn/problem/P3857 */
 use std::io::stdin;
-use zhl_algorithm_template_rs::math::XorLinearEquationSystem;
+use zhl_algorithm_template_rs::math::linearequation::XorLinearEquationSystem;
 
 fn main() {
     let mut s = String::new();

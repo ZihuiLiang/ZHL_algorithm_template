@@ -2,3 +2,4 @@
 */
 
 pub mod kmp;
+pub mod stringhash;

@@ -14,6 +14,7 @@ pub trait Pseudorandom64: Clone {
 }
 
 /** `IntGenerator` is a generator used for generating integers. */
+#[derive(Clone, Debug)]
 pub struct IntGenerator<RNG: Pseudorandom64>{
     rng: RNG,
     v_1: u64,
@@ -41,7 +42,7 @@ impl<RNG: Pseudorandom64> IntGenerator<RNG> {
     }
 
     /** Generate a `T`-type integer. */
-    pub fn gen<T: TryFrom<u64> + std::ops::BitOr<Output = T> + std::ops::Shl<i32, Output = T> + Copy>(&mut self) -> T where <T as TryFrom<u64>>::Error: std::fmt::Debug {
+    pub fn gen<T: TryFrom<u64> + std::ops::BitOr<Output = T> + std::ops::Shl<usize, Output = T> + Copy>(&mut self) -> T where <T as TryFrom<u64>>::Error: std::fmt::Debug {
 
         match std::mem::size_of::<T>() {
             1 => {
@@ -93,14 +94,14 @@ impl<RNG: Pseudorandom64> IntGenerator<RNG> {
     }
 
     /** Generate an integer in `range` randomly. */
-    pub fn gen_range<T: TryFrom<u64> + std::ops::BitOr<Output = T> + std::ops::Shl<i32, Output = T> + std::ops::Sub<Output = T> + std::ops::Rem<Output = T>  + std::ops::Add<Output = T> + Copy>(&mut self, range: Range<T>) -> T where <T as TryFrom<u64>>::Error: std::fmt::Debug {
+    pub fn gen_range<T: TryFrom<u64> + std::ops::BitOr<Output = T> + std::ops::Shl<usize, Output = T> + std::ops::Sub<Output = T> + std::ops::Rem<Output = T>  + std::ops::Add<Output = T> + Copy>(&mut self, range: Range<T>) -> T where <T as TryFrom<u64>>::Error: std::fmt::Debug {
         self.gen::<T>() % (range.end - range.start) + range.start
     }
 
     /** Random `k` integers from `range`. $O(k)$ time with `can_repeat=true`. Expected $O(k)$ time with `can_repeat=false`. */
     pub fn gen_range_k
         <T:
-        TryFrom<u64> + std::ops::BitOr<Output = T> + std::ops::Shl<i32, Output = T> + std::ops::Sub<Output = T> + std::ops::Rem<Output = T>  + std::ops::Add<Output = T> + Copy +// for gen_range
+        TryFrom<u64> + std::ops::BitOr<Output = T> + std::ops::Shl<usize, Output = T> + std::ops::Sub<Output = T> + std::ops::Rem<Output = T>  + std::ops::Add<Output = T> + Copy +// for gen_range
         TryInto<u128> + std::hash::Hash + Copy + std::cmp::PartialOrd + std::cmp::Eq + std::ops::Add<Output = T> + std::ops::Sub<Output = T> + std::ops::Mul<Output = T> + Sized
         >
         (&mut self, range: Range<T>, k: usize, can_repeat: bool) -> Vec<T> 
@@ -198,7 +199,7 @@ impl<RNG: Pseudorandom64> IntGenerator<RNG> {
 
 
 /** `MT19937_64` is a general-purpose pseudorandom number generator. The core of this structure is to generate 64-bit integers. */
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct MT19937_64 {
     mt: [u64; 312],
     index: usize,

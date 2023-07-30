@@ -2,3 +2,5 @@
 */
 
 pub mod linearequation;
+pub mod prime;
+pub mod basic;
