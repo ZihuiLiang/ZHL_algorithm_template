@@ -12,8 +12,8 @@ fn main() {
     for _ in 0..t {
         input.clear();
         stdin().read_line(&mut input).unwrap();
-        let n: u128 = input.trim().parse().unwrap();
-        let primes = pollard_rho.extract_prime_factors(&n);
+        let n: u64 = input.trim().parse().unwrap();
+        let primes = pollard_rho.extract_prime_factors_u64(&n);
         if primes.len() == 1 {
             println!("Prime");
         } else {

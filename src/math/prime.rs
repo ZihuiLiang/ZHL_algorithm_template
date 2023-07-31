@@ -1,19 +1,27 @@
-use crate::{random::generator::{Pseudorandom64, IntGenerator}, math::basic::{pow_mod, gcd}};
+use crate::{random::generator::{Pseudorandom64, IntGenerator}, math::basic::{pow_mod_u32, pow_mod_u64, gcd_u32, gcd_u64}};
 
 /** `PrimalityTest` introduces a trait for primality test. */
 pub trait PrimalityTest: Clone {
-    /** Test if `n` is a prime. Note that `T` should be able to contain $n^2$. */
-    fn is_prime<T>(&mut self, n: &T) -> bool where T: TryFrom<u64> + std::ops::BitOr<Output = T> + std::ops::ShrAssign<usize> + std::ops::Shl<usize, Output = T> + std::ops::Sub<Output = T> + std::ops::AddAssign + std::ops::Mul<Output = T> + std::ops::Rem<Output = T> + std::ops::Div<Output = T>  + std::ops::Add<Output = T> + Copy + std::cmp::PartialEq + std::cmp::PartialOrd + std::ops::BitAnd<Output = T> + std::fmt::Debug, <T as TryFrom<u64>>::Error: std::fmt::Debug;
+    /** Test if 32-bit `n` is a prime. */
+    fn is_prime_u32(&mut self, n: &u32) -> bool;
+
+    /** Test if 64-bit `n` is a prime. */
+    fn is_prime_u64(&mut self, n: &u64) -> bool;
 }
 
 /** `FindPrimeFactors` introduces a trait for Extracting prime factors from an integer.*/
 pub trait ExtractPrimeFactors: Clone {
-    /** Extract all prime factors from an integer. Note that `T` should be able to contain $n^2$. */
-    fn extract_prime_factors<T>(&mut self, n: &T) -> Vec<T> where T: TryFrom<u64> + std::ops::BitOr<Output = T> + std::ops::ShrAssign<usize> + std::ops::Shl<usize, Output = T> + std::ops::Sub<Output = T> + std::ops::AddAssign + std::ops::Mul<Output = T> + std::ops::Rem<Output = T> + std::ops::Div<Output = T> + std::ops::DivAssign + std::ops::Add<Output = T> + Copy + std::cmp::PartialEq + std::cmp::PartialOrd + std::ops::BitAnd<Output = T> + std::fmt::Debug, <T as TryFrom<u64>>::Error: std::fmt::Debug;
+    /** Extract all prime factors from an 32-bit integer. */
+    fn extract_prime_factors_u32(&mut self, n: &u32) -> Vec<u32>;
 
-    /** Extract a (not necessarily prime) factor (which is strictly smaller than `n`) from `n`. Note that `T` should be able to contain $n^2$. */
-    fn extract_factor<T>(&mut self, n: &T) -> Option<T> where T: TryFrom<u64> + std::ops::BitOr<Output = T> + std::ops::ShrAssign<usize> + std::ops::Shl<usize, Output = T> + std::ops::Sub<Output = T> + std::ops::AddAssign + std::ops::Mul<Output = T> + std::ops::Rem<Output = T>  + std::ops::Div<Output = T> + std::ops::Add<Output = T> + Copy + std::cmp::PartialEq + std::cmp::PartialOrd + std::ops::BitAnd<Output = T> + std::fmt::Debug, <T as TryFrom<u64>>::Error: std::fmt::Debug;
+    /** Extract all prime factors from an 64-bit integer. */
+    fn extract_prime_factors_u64(&mut self, n: &u64) -> Vec<u64>;
 
+    /** Extract a (not necessarily prime) factor (which is strictly smaller than `n`) from 32-bit `n`. */
+    fn extract_factor_u32(&mut self, n: &u32) -> Option<u32>;
+
+    /** Extract a (not necessarily prime) factor (which is strictly smaller than `n`) from 64-bit `n`. */
+    fn extract_factor_u64(&mut self, n: &u64) -> Option<u64>;
 }
 
 /** `BruteForcePrimalityTest` is a naive algorithm of primality test. Its computation complexity is $O(\sqrt{n})$. */
@@ -29,91 +37,138 @@ impl BruteForcePrimalityTest {
 
 impl PrimalityTest for BruteForcePrimalityTest {
     /** Test if `n` is a prime in $O(\sqrt{n})$ time. */
-    fn is_prime<T>(&mut self, n: &T) -> bool where T: TryFrom<u64> + std::ops::BitOr<Output = T> + std::ops::ShrAssign<usize> + std::ops::Shl<usize, Output = T> + std::ops::Sub<Output = T> + std::ops::AddAssign + std::ops::Mul<Output = T> + std::ops::Rem<Output = T> + std::ops::Div<Output = T>  + std::ops::Add<Output = T> + Copy + std::cmp::PartialEq + std::cmp::PartialOrd + std::ops::BitAnd<Output = T> + std::fmt::Debug, <T as TryFrom<u64>>::Error: std::fmt::Debug {
-        let zero: T = 0.try_into().unwrap();
-        let one: T = 1.try_into().unwrap();
-        let two: T = 2.try_into().unwrap();
-        if *n == two {
+    fn is_prime_u32(&mut self, n: &u32) -> bool {
+        if *n == 2 {
             return true;
         }
-        if *n < two || *n & one == zero {
+        if *n < 2 || *n & 1 == 0 {
             return false;
         }
-        assert_eq!(*n * *n / *n, *n); // check T can contain *n * *n
-        let mut i = two;
-        let mut i2: T = 4.try_into().unwrap(); 
-        while i2 <= *n {
-            if *n % i == zero {
+        let mut i = 2;
+        while i * i <= *n {
+            if *n % i == 0 {
                 return false;
             }
-            i2 += one + (i << 1);
-            i += one;
+            i += 1;
+        }
+        true
+    }
+
+    /** Test if `n` is a prime in $O(\sqrt{n})$ time. */
+    fn is_prime_u64(&mut self, n: &u64) -> bool {
+        if *n < u32::MAX as u64 {
+            return self.is_prime_u32(&(*n as u32));
+        }
+        if *n < 2 || *n & 1 == 0 {
+            return false;
+        }
+        let mut i = 2;
+        while i * i <= *n {
+            if *n % i == 0 {
+                return false;
+            }
+            i += 1;
         }
         true
     }
 }
 
 impl ExtractPrimeFactors for BruteForcePrimalityTest {
-    /** Extract all prime factors from an integer. */
-    fn extract_prime_factors<T>(&mut self, n: &T) -> Vec<T> where T: TryFrom<u64> + std::ops::BitOr<Output = T> + std::ops::ShrAssign<usize> + std::ops::Shl<usize, Output = T> + std::ops::Sub<Output = T> + std::ops::AddAssign + std::ops::Mul<Output = T> + std::ops::Rem<Output = T> + std::ops::Div<Output = T> + std::ops::DivAssign + std::ops::Add<Output = T> + Copy + std::cmp::PartialEq + std::cmp::PartialOrd + std::ops::BitAnd<Output = T> + std::fmt::Debug, <T as TryFrom<u64>>::Error: std::fmt::Debug {
+    /** Extract all prime factors from an 32-bit integer. */
+    fn extract_prime_factors_u32(&mut self, n: &u32) -> Vec<u32> {
         let mut ans = Vec::new();
         let mut n = *n;
-        let zero: T = 0.try_into().unwrap();
-        let one: T = 1.try_into().unwrap();
-        let two: T = 2.try_into().unwrap();
-        while n & one == zero {
-            ans.push(two);
+        while n & 1 == 0 {
+            ans.push(2);
             n >>= 1;
         }
-        let mut i = two;
-        let mut i2: T = 4.try_into().unwrap();
-        while i2 <= n {
-            while n % i == zero {
+        let mut i = 2;
+        while i * i <= n {
+            while n % i == 0 {
                 ans.push(i);
                 n /= i;
             } 
-            i2 += one + (i << 1);
-            i += one;
+            i += 1;
         }
-        if n != one {
+        if n != 1 {
             ans.push(n);
         }
         ans
     }
 
-    /** Extract a factor from an integer. */
-    fn extract_factor<T>(&mut self, n: &T) -> Option<T> where T: TryFrom<u64> + std::ops::BitOr<Output = T> + std::ops::ShrAssign<usize> + std::ops::AddAssign + std::ops::Shl<usize, Output = T> + std::ops::Sub<Output = T> + std::ops::Mul<Output = T> + std::ops::Rem<Output = T>  + std::ops::Div<Output = T> + std::ops::Add<Output = T> + Copy + std::cmp::PartialEq + std::cmp::PartialOrd + std::ops::BitAnd<Output = T> + std::fmt::Debug, <T as TryFrom<u64>>::Error: std::fmt::Debug {
-        let mut n = *n;
-        let zero: T = 0.try_into().unwrap();
-        let one: T = 1.try_into().unwrap();
-        let two: T = 2.try_into().unwrap();
-        while n & one == zero {
-            return Some(two);
+    /** Extract all prime factors from an 64-bit integer. */
+    fn extract_prime_factors_u64(&mut self, n: &u64) -> Vec<u64> {
+        if *n <= u32::MAX as u64 {
+            return self.extract_prime_factors_u32(&(*n as u32)).iter().map(|x| *x as u64).collect();
         }
-        let mut i = two;
-        let mut i2: T = 4.try_into().unwrap();
-        while i2 <= n {
-            if n % i == zero {
+        let mut ans = Vec::new();
+        let mut n = *n;
+        while n & 1 == 0 {
+            ans.push(2);
+            n >>= 1;
+        }
+        let mut i = 2;
+        while i * i <= n {
+            while n % i == 0 {
+                ans.push(i);
+                n /= i;
+            } 
+            i += 1;
+        }
+        if n != 1 {
+            ans.push(n);
+        }
+        ans
+    }
+
+    /** Extract a (not necessarily prime) factor (which is strictly smaller than `n`) from 32-bit `n`. */
+    fn extract_factor_u32(&mut self, n: &u32) -> Option<u32> {
+        if *n <= 2 {
+            return None;
+        }
+        if *n & 1 == 0 {
+            return Some(2);
+        }
+        let mut i = 2;
+        while i * i <= *n {
+            if n % i == 0 {
                 return Some(i);
-            } else {
-                i2 += one + (i << 1);
-                i += one;
-            }
+            } 
+            i += 1;
         }
         None
     }
+
+    /** Extract a (not necessarily prime) factor (which is strictly smaller than `n`) from 64-bit `n`. */
+    fn extract_factor_u64(&mut self, n: &u64) -> Option<u64> {
+        if *n <= u32::MAX as u64 {
+            return self.extract_factor_u32(&(*n as u32)).map(|x| x as u64);
+        }
+        if *n & 1 == 0 {
+            return Some(2);
+        }
+        let mut i = 2;
+        while i * i <= *n {
+            if *n % i == 0 {
+                return Some(i);
+            } 
+            i += 1;
+        }
+        None
+    }
+
 }
 
 /** `MillerRabin` is an efficient algorithm of primality test. Its computation complexity is $O(k\log^2 n)$ where $k$ is the number of rounds performed and $n$ is the number tested for primality. Its accuracy is $4^{-k}$. */
 #[derive(Clone, Debug)]
 pub struct MillerRabin<RNG: Pseudorandom64> {
     rng: IntGenerator<RNG>,
-    tests: usize,
+    tests: u32,
 }
 
 impl<RNG: Pseudorandom64> MillerRabin<RNG> {
     /** New a `MillerRabin` with a given pseudorandom number generator `rng` and the number of rounds `tests`. If `tests` is `None` then set `20 `as the number of tests. */
-    pub fn new(rng: &RNG, tests: Option<usize>) -> MillerRabin<RNG> {
+    pub fn new(rng: &RNG, tests: Option<u32>) -> MillerRabin<RNG> {
         MillerRabin {
             rng: IntGenerator::new(rng),
             tests: if tests.is_none() { 20 } else { tests.unwrap() },
@@ -122,37 +177,67 @@ impl<RNG: Pseudorandom64> MillerRabin<RNG> {
 }
 
 impl<RNG: Pseudorandom64> PrimalityTest for MillerRabin<RNG> {
-    /** Test if `n` is a prime. */
-    fn is_prime<T>(&mut self, n: &T) -> bool where T: TryFrom<u64> + std::ops::BitOr<Output = T> + std::ops::ShrAssign<usize> + std::ops::Shl<usize, Output = T> + std::ops::Sub<Output = T> + std::ops::AddAssign + std::ops::Mul<Output = T> + std::ops::Rem<Output = T> + std::ops::Div<Output = T>  + std::ops::Add<Output = T> + Copy + std::cmp::PartialEq + std::cmp::PartialOrd + std::ops::BitAnd<Output = T> + std::fmt::Debug, <T as TryFrom<u64>>::Error: std::fmt::Debug{
-        let zero: T = 0.try_into().unwrap();
-        let one: T = 1.try_into().unwrap();
-        let two: T = 2.try_into().unwrap();
-        let mut expected_step:u64 = (std::mem::size_of::<T>() * 8 * self.tests).try_into().unwrap(); 
-        expected_step = expected_step * expected_step;
-        let bound: T = expected_step.try_into().unwrap();
-        if n < &bound {
-            return BruteForcePrimalityTest::new().is_prime(n);
+    /** Test if 32-bit `n` is a prime. */
+    fn is_prime_u32(&mut self, n: &u32) -> bool {
+        let mut expected_step:u64 = (((32 - n.leading_zeros()) * (32 - n.leading_zeros())) as u64) * (self.tests as u64); 
+        if (*n as u64) <= expected_step * expected_step {
+            return BruteForcePrimalityTest::new().is_prime_u32(n);
         }
-        assert_eq!(*n * *n / *n, *n); // check T can contain *n * *n
-        let mut d = *n - one;
+        let mut d = *n - 1;
+        let n_1 = (*n-1) as u64; 
+        let nu64 = *n as u64;
         let mut s = 0;
-        while d & one == zero {
+        while d & 1 == 0 {
             d >>= 1;
             s += 1;
         }
         for _ in 0..self.tests {
-            let mut a = self.rng.gen_range::<T>(two..*n);
-            let mut x = pow_mod(a, d, n);
-            if x == one || x == *n - one {
+            let mut a = self.rng.gen_range_u32(2..*n);
+            let mut x = pow_mod_u32(&a, &d, &n) as u64;
+            if x == 1 || x == n_1 {
                 continue;
             }
             let mut i = 0;
             while i < s {
-                if x == *n - one {
+                if x == n_1 {
                     break;
                 }
                 i += 1;
-                x = x * x % *n;
+                x = x * x % nu64;
+            }
+            if i == s {
+                return false;
+            }
+        }
+        true
+    }
+
+    /** Test if 64-bit `n` is a prime. */
+    fn is_prime_u64(&mut self, n: &u64) -> bool {
+        if *n <= u32::MAX as u64 {
+            return self.is_prime_u32(&(*n as u32));
+        }
+        let mut d = *n - 1;
+        let n_1 = (*n-1) as u128; 
+        let nu128 = *n as u128;
+        let mut s = 0;
+        while d & 1 == 0 {
+            d >>= 1;
+            s += 1;
+        }
+        for _ in 0..self.tests {
+            let mut a = self.rng.gen_range_u64(2..*n);
+            let mut x = pow_mod_u64(&a, &d, &n) as u128;
+            if x == 1 || x == n_1 {
+                continue;
+            }
+            let mut i = 0;
+            while i < s {
+                if x == n_1 {
+                    break;
+                }
+                i += 1;
+                x = x * x % nu128;
             }
             if i == s {
                 return false;
@@ -162,8 +247,8 @@ impl<RNG: Pseudorandom64> PrimalityTest for MillerRabin<RNG> {
     }
 }
 
-/** `PollardRho` is an algorithm for integer factorization. */
 
+/** `PollardRho` is an algorithm for integer factorization. */
 #[derive(Clone, Debug)]
 pub struct PollardRho<RNG: Pseudorandom64, PT: PrimalityTest> {
     rng: IntGenerator<RNG>,
@@ -181,35 +266,35 @@ impl<RNG: Pseudorandom64, PT: PrimalityTest> PollardRho<RNG, PT> {
 }
 
 impl<RNG: Pseudorandom64, PT: PrimalityTest> ExtractPrimeFactors for PollardRho<RNG, PT> {
-    /** Extract all prime factors from an integer. */
-    fn extract_prime_factors<T>(&mut self, n: &T) -> Vec<T> where T: TryFrom<u64> + std::ops::BitOr<Output = T> + std::ops::ShrAssign<usize> + std::ops::Shl<usize, Output = T> + std::ops::AddAssign + std::ops::Sub<Output = T> + std::ops::Mul<Output = T> + std::ops::Rem<Output = T> + std::ops::Div<Output = T> + std::ops::DivAssign + std::ops::Add<Output = T> + Copy + std::cmp::PartialEq + std::cmp::PartialOrd + std::ops::BitAnd<Output = T> + std::fmt::Debug, <T as TryFrom<u64>>::Error: std::fmt::Debug {
+    /** Extract all prime factors from an 32-bit integer. */
+    fn extract_prime_factors_u32(&mut self, n: &u32) -> Vec<u32> {
         let mut ans = Vec::new();
         let mut n = *n;
-        let zero: T = 0.try_into().unwrap();
-        let one: T = 1.try_into().unwrap();
-        let two: T = 2.try_into().unwrap();
-        while n & one == zero {
-            ans.push(two);
+        while n & 1 == 0 {
+            ans.push(2);
             n >>= 1;
+        }
+        if n == 1 {
+            return ans;
         }
         let mut d = vec![n];
         while d.len() > 0 {
             let mut x = d.pop().unwrap();
-            match self.extract_factor(&x) {
+            match self.extract_factor_u32(&x) {
                 Some(p) => {
-                    let ret = self.extract_prime_factors(&p);
+                    let ret = self.extract_prime_factors_u32(&p);
                     ans.append(&mut ret.clone());
                     x /= p;
                     for i in ret {
-                        while x % i == zero {
+                        while x % i == 0 {
                             ans.push(i);
                             x /= i;
                         }
-                        if x == one {
+                        if x == 1 {
                             break;
                         }
                     }
-                    if x != one {
+                    if x != 1 {
                         d.push(x);
                     }
                 },
@@ -221,53 +306,150 @@ impl<RNG: Pseudorandom64, PT: PrimalityTest> ExtractPrimeFactors for PollardRho<
         ans
     }
 
-    /** Extract a (not necessarily prime) factor (which is strictly smaller than `n`) from `n`. If no such a factor then return `None`. It takes $O(n^{0.25})$ time.  */
-    fn extract_factor<T>(&mut self, n: &T) -> Option<T> where T: TryFrom<u64> + std::ops::BitOr<Output = T> + std::ops::ShrAssign<usize> + std::ops::Shl<usize, Output = T> + std::ops::AddAssign + std::ops::Sub<Output = T> + std::ops::Mul<Output = T> + std::ops::Rem<Output = T>  + std::ops::Div<Output = T> + std::ops::Add<Output = T> + Copy + std::cmp::PartialEq + std::cmp::PartialOrd + std::ops::BitAnd<Output = T> + std::fmt::Debug, <T as TryFrom<u64>>::Error: std::fmt::Debug {
-        if self.primality_tester.is_prime(n) {
+    /** Extract a (not necessarily prime) factor (which is strictly smaller than `n`) from 32-bit `n`. If no such a factor then return `None`. It takes $O(n^{0.25})$ time.  */
+    fn extract_factor_u32(&mut self, n: &u32) -> Option<u32> {
+        if self.primality_tester.is_prime_u32(n) {
             return None;
         }
-        let zero: T = 0.try_into().unwrap();
-        let one: T = 1.try_into().unwrap();
-        let two: T = 2.try_into().unwrap();
-        if *n == two {
+        if *n <= 2 {
             return None;
         }
-        if *n < two || *n & one == zero {
-            return None;
+        if *n & 1 == 0 {
+            return Some(2);
         }
-        assert_eq!(*n * *n / *n, *n); // check T can contain *n * *n
-        let mut s = zero.clone();
-        let mut t = zero.clone();
-        let c = self.rng.gen_range::<T>(one..*n);
+        let mut s = 0u64;
+        let mut t = 0u64;
+        let c = self.rng.gen_range_u32(1..*n) as u64;
+        let n64 = *n as u64;
         let mut goal = 1u64;
         loop {
-            let mut val = one.clone();
+            let mut val = 1u64;
             for i in 1..=goal {
-                t = (t * t + c) % *n;
-                if t > s {
-                    val = val * (t - s) % *n;
-                } else {
-                    val = val * (s - t) % *n;
+                t = (t * t) %n64 + c;
+                if t >= n64 {
+                    t -= n64;
                 }
-                if val == zero {
+                if t > s {
+                    val = val * (t - s) % n64;
+                } else {
+                    val = val * (s - t) % n64;
+                }
+                if val == 0 {
                     if t != s {
                         if t > s {
-                            return Some(gcd(t - s, *n));
+                            return Some(gcd_u32((t - s) as u32, *n));
                         } else {
-                            return Some(gcd(s - t, *n));
+                            return Some(gcd_u32((s - t) as u32, *n));
                         }
                     }
-                    return self.extract_factor(n);
+                    return self.extract_factor_u32(n);
                 }
                 if i % 127 == 0 {
-                    let d = gcd(val, *n);
-                    if d > one {
+                    let d = gcd_u32(val as u32, *n);
+                    if d > 1 {
                         return Some(d);
                     }
                 }
             }    
-            let d = gcd(val, *n);
-            if d > one {
+            let d = gcd_u32(val as u32, *n);
+            if d > 1 {
+                return Some(d);
+            }
+            s = t.clone();
+            goal <<= 1;
+        }
+    }
+
+    /** Extract all prime factors from an 64-bit integer. */
+    fn extract_prime_factors_u64(&mut self, n: &u64) -> Vec<u64> {
+        if *n <= u32::MAX as u64 {
+            return self.extract_prime_factors_u32(&(*n as u32)).iter().map(|x| *x as u64).collect();
+        }
+        let mut ans = Vec::new();
+        let mut n = *n;
+        while n & 1 == 0 {
+            ans.push(2);
+            n >>= 1;
+        }
+        if n == 1 {
+            return ans;
+        }
+        let mut d = vec![n];
+        while d.len() > 0 {
+            let mut x = d.pop().unwrap();
+            match self.extract_factor_u64(&x) {
+                Some(p) => {
+                    let ret = self.extract_prime_factors_u64(&p);
+                    ans.append(&mut ret.clone());
+                    x /= p;
+                    for i in ret {
+                        while x % i == 0 {
+                            ans.push(i);
+                            x /= i;
+                        }
+                        if x == 1 {
+                            break;
+                        }
+                    }
+                    if x != 1 {
+                        d.push(x);
+                    }
+                },
+                None => {
+                    ans.push(x);
+                },
+            }
+        }
+        ans
+    }
+
+    /** Extract a (not necessarily prime) factor (which is strictly smaller than `n`) from 64-bit `n`. If no such a factor then return `None`. It takes $O(n^{0.25})$ time.  */
+    fn extract_factor_u64(&mut self, n: &u64) -> Option<u64> {
+        if *n <= u32::MAX as u64 {
+            return self.extract_factor_u32(&(*n as u32)).map(|x| x as u64);
+        }
+        if self.primality_tester.is_prime_u64(n) {
+            return None;
+        }
+        if *n & 1 == 0 {
+            return Some(2);
+        }
+        let mut s = 0u128;
+        let mut t = 0u128;
+        let c = self.rng.gen_range_u64(1..*n) as u128;
+        let n128 = *n as u128;
+        let mut goal = 1u64;
+        loop {
+            let mut val = 1u128;
+            for i in 1..=goal {
+                t = (t * t) %n128 + c;
+                if t >= n128 {
+                    t -= n128;
+                }
+                if t > s {
+                    val = val * (t - s) % n128;
+                } else {
+                    val = val * (s - t) % n128;
+                }
+                if val == 0 {
+                    if t != s {
+                        if t > s {
+                            return Some(gcd_u64((t - s) as u64, *n));
+                        } else {
+                            return Some(gcd_u64((s - t) as u64, *n));
+                        }
+                    }
+                    return self.extract_factor_u64(n);
+                }
+                if i % 127 == 0 {
+                    let d = gcd_u64(val as u64, *n);
+                    if d > 1 {
+                        return Some(d);
+                    }
+                }
+            }    
+            let d = gcd_u64(val as u64, *n);
+            if d > 1 {
                 return Some(d);
             }
             s = t.clone();

@@ -9,8 +9,8 @@ fn main() {
         if x == 0 {
             break;
         }
-        let n: u128 = input.trim().parse().unwrap();
-        if miller_rabin.is_prime(&n) {
+        let n: u64 = input.trim().parse().unwrap();
+        if miller_rabin.is_prime_u64(&n) {
             println!("Y");
         } else {
             println!("N");
