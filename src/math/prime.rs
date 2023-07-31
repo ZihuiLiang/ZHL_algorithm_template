@@ -317,46 +317,48 @@ impl<RNG: Pseudorandom64, PT: PrimalityTest> ExtractPrimeFactors for PollardRho<
         if *n & 1 == 0 {
             return Some(2);
         }
-        let mut s = 0u64;
-        let mut t = 0u64;
-        let c = self.rng.gen_range_u32(1..*n) as u64;
-        let n64 = *n as u64;
-        let mut goal = 1u64;
         loop {
-            let mut val = 1u64;
-            for i in 1..=goal {
-                t = (t * t) %n64 + c;
-                if t >= n64 {
-                    t -= n64;
-                }
-                if t > s {
-                    val = val * (t - s) % n64;
-                } else {
-                    val = val * (s - t) % n64;
-                }
-                if val == 0 {
-                    if t != s {
-                        if t > s {
-                            return Some(gcd_u32((t - s) as u32, *n));
-                        } else {
-                            return Some(gcd_u32((s - t) as u32, *n));
+            let mut s = 0u64;
+            let mut t = 0u64;
+            let c = self.rng.gen_range_u32(1..*n) as u64;
+            let n64 = *n as u64;
+            let mut goal = 1u64;
+            loop {
+                let mut val = 1u64;
+                for i in 1..=goal {
+                    t = (t * t) %n64 + c;
+                    if t >= n64 {
+                        t -= n64;
+                    }
+                    if t > s {
+                        val = val * (t - s) % n64;
+                    } else {
+                        val = val * (s - t) % n64;
+                    }
+                    if val == 0 {
+                        if t != s {
+                            if t > s {
+                                return Some(gcd_u32((t - s) as u32, *n));
+                            } else {
+                                return Some(gcd_u32((s - t) as u32, *n));
+                            }
+                        }
+                        break;
+                    }
+                    if i % 127 == 0 {
+                        let d = gcd_u32(val as u32, *n);
+                        if d > 1 {
+                            return Some(d);
                         }
                     }
-                    return self.extract_factor_u32(n);
+                }    
+                let d = gcd_u32(val as u32, *n);
+                if d > 1 {
+                    return Some(d);
                 }
-                if i % 127 == 0 {
-                    let d = gcd_u32(val as u32, *n);
-                    if d > 1 {
-                        return Some(d);
-                    }
-                }
-            }    
-            let d = gcd_u32(val as u32, *n);
-            if d > 1 {
-                return Some(d);
+                s = t.clone();
+                goal <<= 1;
             }
-            s = t.clone();
-            goal <<= 1;
         }
     }
 
@@ -414,46 +416,48 @@ impl<RNG: Pseudorandom64, PT: PrimalityTest> ExtractPrimeFactors for PollardRho<
         if *n & 1 == 0 {
             return Some(2);
         }
-        let mut s = 0u128;
-        let mut t = 0u128;
-        let c = self.rng.gen_range_u64(1..*n) as u128;
-        let n128 = *n as u128;
-        let mut goal = 1u64;
         loop {
-            let mut val = 1u128;
-            for i in 1..=goal {
-                t = (t * t) %n128 + c;
-                if t >= n128 {
-                    t -= n128;
-                }
-                if t > s {
-                    val = val * (t - s) % n128;
-                } else {
-                    val = val * (s - t) % n128;
-                }
-                if val == 0 {
-                    if t != s {
-                        if t > s {
-                            return Some(gcd_u64((t - s) as u64, *n));
-                        } else {
-                            return Some(gcd_u64((s - t) as u64, *n));
+            let mut s = 0u128;
+            let mut t = 0u128;
+            let c = self.rng.gen_range_u64(1..*n) as u128;
+            let n128 = *n as u128;
+            let mut goal = 1u64;
+            loop {
+                let mut val = 1u128;
+                for i in 1..=goal {
+                    t = (t * t) %n128 + c;
+                    if t >= n128 {
+                        t -= n128;
+                    }
+                    if t > s {
+                        val = val * (t - s) % n128;
+                    } else {
+                        val = val * (s - t) % n128;
+                    }
+                    if val == 0 {
+                        if t != s {
+                            if t > s {
+                                return Some(gcd_u64((t - s) as u64, *n));
+                            } else {
+                                return Some(gcd_u64((s - t) as u64, *n));
+                            }
+                        }
+                        break;
+                    }
+                    if i % 127 == 0 {
+                        let d = gcd_u64(val as u64, *n);
+                        if d > 1 {
+                            return Some(d);
                         }
                     }
-                    return self.extract_factor_u64(n);
+                }    
+                let d = gcd_u64(val as u64, *n);
+                if d > 1 {
+                    return Some(d);
                 }
-                if i % 127 == 0 {
-                    let d = gcd_u64(val as u64, *n);
-                    if d > 1 {
-                        return Some(d);
-                    }
-                }
-            }    
-            let d = gcd_u64(val as u64, *n);
-            if d > 1 {
-                return Some(d);
+                s = t.clone();
+                goal <<= 1;
             }
-            s = t.clone();
-            goal <<= 1;
         }
     }
 }
